@@ -5,11 +5,30 @@
 	$.entwine('ss', function($) {
 
 		$('#SubsitesSelect').entwine({
-			onadd:function(){
-				this.on('change', function(){
-					window.location.search=$.query.set('SubsiteID', $(this).val());
-				});
-			}
+            CurrentSubsiteID: null,
+            Worker: null,
+			onadd: function() {
+                // Prevent edits on wrong subsite by alerting user when their session has changed subsite ID
+                const workerSource = '/_resources/vendor/silverstripe/subsites/javascript/SubsiteIDChangeSpy.js';
+                const changeWorker = new SharedWorker(workerSource, 'subsitechangealert');
+                const handleChangeBroadcast = (event) => this.switchToSubsite(event.data);
+                changeWorker.port.onmessage = handleChangeBroadcast;
+                this.setCurrentSubsiteID($(this).val());
+                this.setWorker(changeWorker);
+            },
+            onchange: function() {
+                this.getWorker().port.postMessage(this.val());
+                window.location.search=$.query.set('SubsiteID', this.val());
+            },
+            switchToSubsite: function(id) {
+                const currentSubsiteID = this.getCurrentSubsiteID();
+                // If the current ID is null (e.g. first load), don't trigger a reload
+                // Nor is it necessary to change if the ID is already the active ID.
+                if (currentSubsiteID && currentSubsiteID != id) {
+                    this.setCurrentSubsiteID(id);
+                    this.val(id).change();
+                }
+            }
 		});
 
 		/*

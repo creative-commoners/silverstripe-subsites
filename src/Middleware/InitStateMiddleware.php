@@ -67,6 +67,7 @@ class InitStateMiddleware implements HTTPMiddleware
      */
     public function getIsAdmin(HTTPRequest $request)
     {
+        return false;
         $adminPaths = static::config()->get('admin_url_paths');
         $adminPaths[] = AdminRootController::admin_url();
         $currentPath = rtrim($request->getURL(), '/') . '/';
